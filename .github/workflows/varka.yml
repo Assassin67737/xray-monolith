@@ -1,0 +1,42 @@
+# Сборка одного варианта (DX11) для ветки varka. Шаги — как в msbuild.yml, без матрицы и релиза.
+name: varka-dx11
+
+on:
+  push:
+    branches: [ "varka" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - name: Configure Pagefile
+      uses: al-cheb/configure-pagefile-action@v1.3
+      with:
+        minimum-size: 8GB
+        maximum-size: 8GB
+        disk-root: "C:"
+
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Init submodules
+      uses: snickerbockers/submodules-init@v4
+
+    - name: setup-msbuild
+      uses: microsoft/setup-msbuild@v1.3.1
+      with:
+        msbuild-architecture: "x64"
+
+    - name: Build DX11
+      run: msbuild /m /p:Configuration=DX11 src/engine-vs2022.sln
+
+    - name: Upload exe and pdb
+      uses: actions/upload-artifact@v4.6.0
+      with:
+        name: varka_DX11
+        path: |
+          ./_build/_game/bin_dbg/*.exe
+          ./_build/_game/bin_dbg/*.pdb
+        if-no-files-found: "error"
+        retention-days: 14
